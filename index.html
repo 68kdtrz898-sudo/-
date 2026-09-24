@@ -18,7 +18,7 @@ h1{font-size:20px;margin:0 0 10px}
 select,input{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:11px 12px;min-width:0}
 select{flex:1}
 .primary{background:var(--accent);color:#07110f;font-weight:800}
-.btn{border-radius:12px;padding:11px 14px;background:var(--panel2)}
+.btn{border-radius:12px;padding:11px 16px;background:var(--panel2)}
 .btn.danger{color:#ff8b9b}
 .btn.small{padding:8px 10px;font-size:13px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;margin-top:10px;padding:13px}
@@ -347,7 +347,7 @@ $("copy").addEventListener("click",async()=>{updateExport();try{await navigator.
 $("sourceBtn").addEventListener("click",()=>{const u=profile().source;if(u) location.href=u; else alert("この機種にはDMM解析ページを登録していません。");});
 $("gMinus").addEventListener("click",()=>{tap();addGames(-100)});
 $("gPlus").addEventListener("click",()=>{tap();addGames(100)});
-$("invPlus").addEventListener("click",()=>{tap();addInvestment(5000)});
+$("invPlus").addEventListener("click",()=>{tap();addInvestment(1000)});
 $("reset").addEventListener("click",resetSession);
 $("stickyG").addEventListener("click",()=>{tap();addGames(100)});
 $("stickyInv").addEventListener("click",()=>{tap();addInvestment(5000)});
