@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#0b0d12">
+<title>パチスロ設定推測カウンター</title>
+<style>
+:root{--bg:#0b0d12;--panel:#151923;--panel2:#1b202b;--text:#f4f6fa;--muted:#929aaa;--line:#292f3b;--accent:#55d6be;--warn:#ffcc66;--danger:#ff667d;--blue:#67a8ff}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Hiragino Sans",sans-serif}
+button,input,select{font:inherit}
+button{color:var(--text);border:0}
+.app{max-width:760px;margin:auto;padding:12px 12px 118px}
+header{position:sticky;top:0;z-index:10;background:rgba(11,13,18,.94);backdrop-filter:blur(14px);padding:10px 0 12px;border-bottom:1px solid var(--line)}
+h1{font-size:20px;margin:0 0 10px}
+.row{display:flex;gap:8px}.machine-select-wrap{background:#11151d;border:1px solid var(--accent);border-radius:14px;padding:10px}.machine-label{font-size:12px;font-weight:800;color:var(--accent);margin-bottom:6px}
+select,input{background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:11px 12px;min-width:0}
+select{flex:1}
+.primary{background:var(--accent);color:#07110f;font-weight:800}
+.btn{border-radius:12px;padding:11px 14px;background:var(--panel2)}
+.btn.danger{color:#ff8b9b}
+.btn.small{padding:8px 10px;font-size:13px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;margin-top:10px;padding:13px}
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.metric{background:var(--panel2);border-radius:14px;padding:13px}
+.metric .label{font-size:12px;color:var(--muted)}
+.metric .value{font-size:25px;font-weight:800;margin-top:3px}
+.metric .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;font-weight:800}
+.section-title span{font-size:12px;color:var(--muted);font-weight:500}
+.item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:11px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.item-name{font-weight:700}
+.item-info{font-size:12px;color:var(--muted);margin-top:3px}
+.counter{display:flex;align-items:center;gap:8px}
+.counter button{width:48px;height:48px;border-radius:12px;background:#252b37;font-size:23px;font-weight:700}
+.counter .plus{background:var(--accent);color:#07110f}
+.count{min-width:45px;text-align:center;font-size:21px;font-weight:800}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:9px}.quick button{min-height:44px;border-radius:12px;background:var(--panel2);font-weight:800}.quick button:active,.counter button:active,.btn:active{transform:scale(.97)}
+.sticky-actions{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:rgba(11,13,18,.96);backdrop-filter:blur(14px);border-top:1px solid var(--line)}.sticky-inner{max-width:760px;margin:auto;display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:7px}.sticky-actions button{min-height:48px;border-radius:13px;background:var(--panel2);font-weight:800}.sticky-actions .main{background:var(--accent);color:#07110f}.sticky-actions .danger{color:#ff9baa}
+.full{width:100%}
+.big-start{height:52px;border-radius:14px;font-weight:900;font-size:17px}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.prob{display:grid;grid-template-columns:70px 1fr 45px;align-items:center;gap:8px;margin:8px 0;font-size:13px}
+.bar{height:9px;background:#292f3b;border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.note{font-size:12px;color:var(--muted);line-height:1.55}
+.badge{display:inline-block;border:1px solid var(--line);background:var(--panel2);padding:5px 8px;border-radius:99px;font-size:12px;margin:3px}
+textarea{width:100%;min-height:155px;background:#0f1218;color:#dfe4ed;border:1px solid var(--line);border-radius:12px;padding:12px;resize:vertical}
+.hidden{display:none}
+@media(min-width:600px){.items{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}.items .item:nth-child(2){border-top:0}.hero{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+<h1>🎰 パチスロ設定推測カウンター</h1>
+<div class="machine-select-wrap">
+<div class="machine-label">🎰 機種を選択</div>
+<div class="row">
+<select id="machine" aria-label="機種を選択"></select>
+<button class="btn small" id="sourceBtn">DMM解析</button>
+</div>
+</div>
+</header>
+
+<section class="card">
+<div class="g">
+<label>総ゲーム数<input id="games" type="number" min="0" step="1" inputmode="numeric" placeholder="例 1850"></label>
+<label>投資額（円）<input id="investment" type="number" min="0" step="1000" inputmode="numeric" value="0"></label>
+</div>
+<div style="height:8px"></div>
+<button id="start" class="primary full big-start">実戦開始</button>
+<div class="quick"><button id="gMinus">−100G</button><button id="gPlus">＋100G</button><button id="invPlus">＋5,000円</button><button id="reset" class="btn danger">リセット</button></div>
+</section>
+
+<section class="hero">
+<div class="metric"><div class="label">総G数</div><div class="value" id="mGames">0</div><div class="sub">G</div></div>
+<div class="metric"><div class="label">投資</div><div class="value" id="mInv">¥0</div><div class="sub">上限目安 ¥50,000</div></div>
+<div class="metric"><div class="label">CZ</div><div class="value" id="mCz">—</div><div class="sub" id="mCzSub">データなし</div></div>
+<div class="metric"><div class="label">AT初当たり</div><div class="value" id="mAt">—</div><div class="sub" id="mAtSub">データなし</div></div>
+</section>
+
+<section class="card">
+<div class="section-title">小役・当選カウント <span>＋1 / −1</span></div>
+<div id="items" class="items"></div>
+</section>
+
+<section class="card">
+<div class="section-title">設定示唆・演出</div>
+<div id="hints"></div>
+</section>
+
+<section class="card">
+<div class="section-title">現在の設定推測</div>
+<div id="assessment"></div>
+</section>
+
+<section class="card">
+<div class="section-title">サンプル不足</div>
+<div id="shortage" class="note"></div>
+</section>
+
+<section class="card">
+<div class="section-title">続行判断の参考情報</div>
+<div id="continueInfo" class="note"></div>
+</section>
+
+<section class="card">
+<div class="section-title">ChatGPTへ送るデータ</div>
+<button id="copy" class="btn full">現在データをコピー</button>
+<div style="height:8px"></div>
+<textarea id="export" readonly></textarea>
+<div class="note" style="margin-top:7px">コピーした文章をChatGPTに貼り付ければ、入力済みデータを前提に設定差・サンプル数・示唆を整理できます。</div>
+</section>
+
+<section class="card">
+<div class="section-title">機種データについて</div>
+<div class="note">このアプリは「実際の設定」を断定しません。設定差や示唆の評価は、登録した機種データだけを使用します。不明な項目は推測で補完せず「評価対象外」とします。</div>
+</section>
+</div>
+<div class="sticky-actions"><div class="sticky-inner"><button id="stickyG">＋100G</button><button id="stickyInv">＋5,000円</button><button id="stickyCopy" class="main">📋 データコピー</button></div></div>
+
+<script>
+const profiles={
+  "戦国乙女5":{
+    source:"https://p-town.dmm.com/machines/5009",
+    items:[
+      ["巫女ポイント0pt到達時のCZ","CZ",true],
+      ["戦国乙女ボーナス","BONUS",true],
+      ["乙女ストラップ：高設定キャラ","示唆",true],
+      ["AT初当たり","AT",true]
+    ],
+    hints:["可スタンプ","吉スタンプ","良スタンプ","優スタンプ","極スタンプ","AT終了画面","レア役時ゴエモンボイス","その他"],
+    rates:{
+      "巫女ポイント0pt到達時のCZ":[4.926,4.673,4.310,4.049,3.968,3.891],
+      "戦国乙女ボーナス":[21206.7,15648.9,13143.5,8143.4,6427.6,5502.7]
+    },
+    hintMap:{
+      "可スタンプ":"設定2以上濃厚","吉スタンプ":"設定3以上濃厚","良スタンプ":"設定4以上濃厚","優スタンプ":"設定5以上濃厚","極スタンプ":"設定6濃厚",
+      "レア役時ゴエモンボイス":"設定示唆（ボイス別）"
+    },
+    note:"DMMぱちタウン 2026/09/23〜24確認。巫女ポイント0pt到達時CZ当選率、戦国乙女ボーナス確率、終了画面・ボイス等を登録。"
+  },
+  "カバネリ":{
+    source:"https://p-town.dmm.com/machines/4160",
+    items:[["チャンス目","小役",false],["無名CZ","CZ",true],["生駒CZ","CZ",true],["美馬CZ","CZ",true],["ボーナス初当たり","BONUS",true],["ST初当たり","AT",true]],
+    hints:["高設定示唆","設定2以上示唆","設定4以上示唆","設定5以上示唆","設定6確定系","終了画面","トロフィー","その他"],
+    note:"DMMぱちタウンの機種ページを参照元に設定判別項目を登録。未確認の数値は推測で補完しません。"
+  },
+  "リコリス・リコイル":{
+    source:"https://p-town.dmm.com/machines/5033",
+    items:[["共通15枚ベル","小役",false],["CZ合算","CZ",true],["ファーストリコリス","CZ",true],["リコリスラッシュ直撃","直撃",true],["150G時の変換高確移行","設定差",true]],
+    hints:["高設定示唆［弱］","高設定示唆［強］","サミートロフィー","ラッシュ終了画面","筐体上部ランプ：緑","筐体上部ランプ：赤","その他"],
+    rates:{
+      "共通15枚ベル":[95.8,95.8,95.8,87.6,83.2,79.1],
+      "CZ合算":[198.7,196.9,191.3,183.3,175.9,169.4],
+      "ファーストリコリス":[3965.0,null,null,null,null,2084.8],
+      "150G時の変換高確移行":[50.0,50.0,50.0,54.7,58.6,62.5]
+    },
+    hintMap:{"サミートロフィー":"銅=設定2以上、銀=設定3以上、金=設定4以上、キリン柄=設定5以上、虹=設定6濃厚","筐体上部ランプ：緑":"高設定示唆［弱］","筐体上部ランプ：赤":"高設定示唆［強］"},
+    note:"DMMぱちタウン 2026/09/24確認。共通15枚ベル、CZ合算、ファーストリコリス、150G時の変換高確移行率、プロローグ、トロフィー等を登録。"
+  },
+  "ワールドダイスター":{
+    source:"https://p-town.dmm.com/machines/5055",
+    items:[["設定差小役","小役",false],["CZ","CZ",true],["AT初当たり","AT",true]],
+    hints:["高設定示唆","設定2以上示唆","設定4以上示唆","設定5以上示唆","設定6確定系","終了画面","ボイス","トロフィー","その他"],
+    note:"DMMぱちタウンの機種ページを参照元にします。設定差の正式数値を確認できた項目だけを今後登録します。"
+  },
+  "青ブタ":{
+    source:"https://p-town.dmm.com/machines/5064",
+    items:[["弱レア役","小役",false],["CZ","CZ",true],["AT初当たり","AT",true]],
+    hints:["高設定示唆","設定2以上示唆","設定4以上示唆","設定5以上示唆","設定6確定系","終了画面","ボイス","トロフィー","その他"],
+    note:"DMMぱちタウンの機種ページを参照元にします。未確認の設定差数値は登録していません。"
+  },
+  "からくりサーカス2":{
+    source:"https://p-town.dmm.com/machines/5019",
+    items:[["レア役","小役",false],["幕間チャンス","CZ",true],["劇場ジャッジ","CZ",true],["AT初当たり","AT",true]],
+    hints:["高設定示唆","設定2以上示唆","設定4以上示唆","設定5以上示唆","設定6確定系","終了画面","トロフィー","その他"],
+    note:"DMMぱちタウンのLパチスロ からくりサーカス2を参照元にします。"
+  },
+  "Lとある魔術の禁書目録2FA":{
+    source:"https://p-town.dmm.com/machines/5053",
+    items:[
+      ["超電磁砲CHANCE","CZ",true],["一方通行CHANCE","CZ",true],
+      ["CZ合算","CZ",true],["AT初当たり","AT",true],["AT直撃","直撃",true],
+      ["スイカ成立時・通常→高確","設定差",true],["スイカ成立時・通常→美琴高確","設定差",true]
+    ],
+    hints:[
+      "藤丸コイン：銅","藤丸コイン：銀","藤丸コイン：金","藤丸コイン：デンジャー柄","藤丸コイン：虹",
+      "AT終了画面：当麻＆インデックス","AT終了画面：美琴＆黒子",
+      "AT終了画面：一方通行＆打ち止め","AT終了画面：一方通行＆番外個体",
+      "AT終了画面：アリサ＆シャットアウラ","AT終了画面：初春＆美琴","AT終了画面：当麻ハーレム",
+      "獲得枚数：174枚OVER","獲得枚数：220枚OVER","獲得枚数：246枚OVER","獲得枚数：456枚OVER",
+      "獲得枚数：666枚OVER","獲得枚数：777枚OVER","獲得枚数：1456枚OVER","獲得枚数：1666枚OVER","獲得枚数：1777枚OVER",
+      "その他"
+    ],
+    rates:{
+      "超電磁砲CHANCE":[258.5,256.0,253.3,244.1,237.4,227.9],
+      "一方通行CHANCE":[2668.5,2639.0,2600.3,2493.0,2378.3,2273.0],
+      "CZ合算":[235.6,233.4,230.8,222.3,215.8,207.2],
+      "AT直撃":[7926.8,7074.9,6354.9,4453.0,4012.8,3736.2]
+    },
+    hintMap:{
+      "藤丸コイン：銅":"設定2以上濃厚","藤丸コイン：銀":"設定3以上濃厚","藤丸コイン：金":"設定4以上濃厚","藤丸コイン：デンジャー柄":"設定5以上濃厚","藤丸コイン：虹":"設定6濃厚",
+      "AT終了画面：当麻＆インデックス":"奇数設定示唆","AT終了画面：美琴＆黒子":"偶数設定示唆",
+      "AT終了画面：一方通行＆打ち止め":"高設定示唆［弱］","AT終了画面：一方通行＆番外個体":"高設定示唆［中］",
+      "AT終了画面：アリサ＆シャットアウラ":"偶数設定濃厚","AT終了画面：初春＆美琴":"設定4以上濃厚","AT終了画面：当麻ハーレム":"設定6濃厚",
+      "獲得枚数：174枚OVER":"設定2以上濃厚","獲得枚数：220枚OVER":"設定6濃厚","獲得枚数：246枚OVER":"偶数設定濃厚","獲得枚数：456枚OVER":"設定4以上濃厚",
+      "獲得枚数：666枚OVER":"設定6濃厚","獲得枚数：777枚OVER":"設定6濃厚","獲得枚数：1456枚OVER":"設定4以上濃厚","獲得枚数：1666枚OVER":"設定6濃厚","獲得枚数：1777枚OVER":"設定6濃厚"
+    },
+    note:"DMMぱちタウン機種ページ5053（最終更新2026/09/24）を参照。型式名はLとある魔術の禁書目録2FA。CZ確率、AT直撃、藤丸コイン、AT終了画面、特定獲得枚数表示などを登録。"
+  },
+  "モンキーターンV":{
+    source:"https://p-town.dmm.com/machines/4450",
+    items:[["弱チェリー","小役",false],["強チェリー","小役",false],["スイカ","小役",false],["超抜チャレンジ","CZ",true],["グランドスラムチャレンジ","CZ",true],["SGラッシュ初当たり","AT",true]],
+    hints:["高設定示唆","設定2以上示唆","設定4以上示唆","設定5以上示唆","設定6確定系","AT終了画面","トロフィー","特殊ラウンド画面","その他"],
+    note:"DMMぱちタウンのスマスロモンキーターンVを参照元にします。"
+  },
+  "攻殻機動隊":{
+    source:"https://p-town.dmm.com/machines/4931",
+    items:[["弱チェリー","小役",false],["スイカ","小役",false],["チャンス目","小役",false],["CZ","CZ",true],["AT初当たり","AT",true]],
+    hints:["高設定示唆","設定2以上示唆","設定4以上示唆","設定5以上示唆","設定6確定系","CZ終了画面","サミートロフィー","その他"],
+    note:"DMMぱちタウンのスマスロ攻殻機動隊を参照元にします。CZ終了画面・サミートロフィー等の設定示唆を確認済みです。"
+  },
+  "戦国乙女4":{
+    source:"https://p-town.dmm.com/machines/4395",
+    items:[["弱レア役","小役",false],["乙女アタック","CZ",true],["AT初当たり","AT",true]],
+    hints:["高設定示唆","設定2以上示唆","設定4以上示唆","設定5以上示唆","設定6確定系","終了画面","ボイス","トロフィー","その他"],
+    note:"DMMぱちタウンのL戦国乙女4を参照元にします。"
+  },
+  "化物語":{
+    source:"https://p-town.dmm.com/machines/1037",
+    items:[["スイカ＆弱チェリー","設定差小役",false],["AT初当たり","AT",true],["解呪ノ儀","CZ",true],["AT中BIG","BONUS",true]],
+    hints:["高設定示唆","設定2以上示唆","設定4以上示唆","設定5以上示唆","設定6確定系","ボーナス確定画面","終了画面","その他"],
+    rates:{"スイカ＆弱チェリー":[52.42,51.20,50.02,48.90,47.83,46.81],"AT初当たり":[215.5,207.5,199.4,191.9,181.1,155.4]},
+    note:"DMMぱちタウン掲載の設定差小役・AT初当たりを登録。"
+  },
+  "汎用テンプレート":{
+    source:"",
+    items:[["弱チェリー","小役",false],["強チェリー","小役",false],["スイカ","小役",false],["チャンス目","小役",false],["CZ","CZ",true],["AT/ART初当たり","AT",true],["特定小役→CZ","当選",true],["特定小役→AT","当選",true]],
+    hints:["高設定示唆","設定2以上示唆","設定4以上示唆","設定5以上示唆","設定6確定系","終了画面","ボイス","トロフィー","その他"],
+    note:"基準値未登録。数値による設定推測は行いません。"
+  }
+};
+let state={machine:"汎用テンプレート",games:0,investment:0,counts:{},hints:{},started:false};
+const STORAGE_KEY="pachislot_counter_v2";
+function loadState(){try{const all=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");const saved=all[state.machine];if(saved) state={...state,...saved};}catch(e){}}
+function saveState(){try{const all=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");all[state.machine]={games:state.games,investment:state.investment,counts:state.counts,hints:state.hints,started:state.started};localStorage.setItem(STORAGE_KEY,JSON.stringify(all));}catch(e){}}
+function tap(){if(navigator.vibrate) navigator.vibrate(8)}
+function totalByType(type){return profile().items.filter(x=>x[1]===type).reduce((a,x)=>a+(state.counts[x[0]]||0),0)}
+
+const $=id=>document.getElementById(id);
+function esc(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function profile(){return profiles[state.machine]||profiles["汎用テンプレート"]}
+function freq(n){return state.games>0&&n>0?(state.games/n).toFixed(1):"—"}
+function expectedRate(name,i){
+  const r=profile().rates?.[name]?.[i];
+  return (r==null||r===0)?"—":`1/${Number(r).toLocaleString("ja-JP")}`;
+}
+function money(n){return "¥"+Number(n||0).toLocaleString("ja-JP")}
+function renderMachine(){
+  $("machine").innerHTML=Object.keys(profiles).map(x=>`<option>${esc(x)}</option>`).join("");
+  $("machine").value=state.machine;
+}
+function render(){
+  $("games").value=state.games||"";
+  $("investment").value=state.investment||0;
+  $("mGames").textContent=state.games.toLocaleString();
+  $("mInv").textContent=money(state.investment);
+  const cz=totalByType("CZ"),at=totalByType("AT")+totalByType("BONUS");
+  $("mCz").textContent=cz?`1/${freq(cz)}`:"—"; $("mCzSub").textContent=cz?`${cz}回`:"データなし";
+  $("mAt").textContent=at?`1/${freq(at)}`:"—"; $("mAtSub").textContent=at?`${at}回`:"データなし";
+  $("items").innerHTML=profile().items.map(([name,type])=>{
+    const n=state.counts[name]||0;
+    return `<div class="item"><div><div class="item-name">${esc(name)}</div><div class="item-info">${n?`${n}回 → 1/${freq(n)}`:"0回"}${type==="役確率"||type==="小役"||type==="設定差小役"?"":" · "+type}${profile().rates?.[name]?` · 設定1〜6：${profile().rates[name].map((r,i)=>`設定${i+1} ${expectedRate(name,i)}`).join(" / ")}`:""}</div></div><div class="counter"><button onclick="tap();changeCount('${esc(name)}',-1)">−</button><div class="count">${n}</div><button class="plus" onclick="tap();changeCount('${esc(name)}',1)">＋</button></div></div>`;
+  }).join("");
+  $("hints").innerHTML=profile().hints.map(name=>{
+    const n=state.hints[name]||0;
+    return `<div class="item"><div><div class="item-name">${esc(name)}</div><div class="item-info">記録回数</div></div><div class="counter"><button onclick="tap();changeHint('${esc(name)}',-1)">−</button><div class="count">${n}</div><button class="plus" onclick="tap();changeHint('${esc(name)}',1)">＋</button></div></div>`
+  }).join("");
+  assess();
+  updateExport();
+}
+function assess(){
+  const g=state.games, c=state.counts, h=state.hints, p=profile();
+  let shortage=[],scores=[0,0,0,0,0,0],used=0;
+  if(p.rates){
+    Object.entries(p.rates).forEach(([name,rates])=>{
+      const n=c[name]||0;
+      if(!n || g<300){shortage.push(name);return}
+      const obs=n/g; used++;
+      rates.forEach((den,i)=>{
+        if(den==null) return;
+        const expected=1/den;
+        const variance=Math.max(expected*(1-expected)/g,1e-9);
+        const z=(obs-expected)/Math.sqrt(variance);
+        scores[i]+=Math.max(-6,Math.min(6,z))*0.8;
+      });
+    });
+  }
+  let assessment="";
+  if(used===0){
+    assessment=`<div class="note"><b>数値推測：</b>登録済み設定差項目の入力待ちです。<br><br><b>現在：</b>サンプル不足・評価保留<br>${p.note||""}</div>`;
+  }else{
+    const max=Math.max(...scores),ex=scores.map(x=>Math.exp(x-max)),sum=ex.reduce((a,b)=>a+b,0);
+    const probs=ex.map(x=>x/sum*100);
+    assessment=`<div class="note"><b>DMM登録済み設定差からの相対評価</b><br><br>`+
+      probs.map((v,i)=>`設定${i+1}：${v.toFixed(1)}%`).join("<br>")+
+      `<br><br><span class="badge">${g<1000?"サンプル不足":g<2000?"初期サンプル":"継続観測"}</span>`+
+      `<br>※参考値です。実際の設定を断定しません。示唆演出は別途、確定・濃厚条件を優先します。`+
+      `<br>${p.note||""}</div>`;
+  }
+  const hintList=Object.entries(h).filter(([,n])=>n>0);
+  if(hintList.length) assessment+=`<div style="margin-top:10px"><b>記録済み示唆</b><br>`+
+    hintList.map(([k,v])=>`<span class="badge">${esc(k)} ×${v}${p.hintMap?.[k]?`：${esc(p.hintMap[k])}`:""}</span>`).join("")+`</div>`;
+  $("shortage").innerHTML=shortage.length?shortage.map(x=>`<span class="badge">${esc(x)}</span>`).join(""):"登録済み設定差項目について入力があります。";
+  $("continueInfo").innerHTML=(g<500?"総G数が少ないため、小役確率は大きくブレます。":g<1500?"小役・初当たりはまだブレやすい段階です。":"複数の独立した設定差を合わせて評価してください。")+
+    "<br>一時的な連チャンや右肩上がりのグラフは主要根拠にしません。"+
+    "<br>確定・濃厚系演出は機種別の正式な示唆内容を優先します。";
+  $("assessment").innerHTML=assessment;
+}
+function changeCount(name,d){state.counts[name]=Math.max(0,(state.counts[name]||0)+d);saveState();render()}
+function changeHint(name,d){state.hints[name]=Math.max(0,(state.hints[name]||0)+d);saveState();render()}
+function addGames(d){state.games=Math.max(0,state.games+d);saveState();render()}
+function addInvestment(d){state.investment=Math.max(0,state.investment+d);saveState();render()}
+function resetSession(){if(confirm("この機種の実戦データをすべてリセットしますか？")){state.games=0;state.investment=0;state.counts={};state.hints={};state.started=false;saveState();render()}}
+function updateExport(){
+ let s=`機種：${state.machine}\n総G数：${state.games.toLocaleString()}G\n投資：${money(state.investment)}\n`;
+ profile().items.forEach(([name])=>{const n=state.counts[name]||0;s+=`${name}：${n}回${n&&state.games?`（1/${freq(n)}）`:""}\n`});
+ const hs=Object.entries(state.hints).filter(([,n])=>n>0);
+ if(hs.length)s+="設定示唆："+hs.map(([k,v])=>`${k}×${v}`).join("、")+"\n";
+ s+=`\n設定推測：${state.games<1500?"サンプル不足":"継続観測"}\n※実際の設定は断定せず、機種の正式解析値に基づいて判断してください。`;
+ $("export").value=s;
+}
+$("machine").addEventListener("change",e=>{
+  state.machine=e.target.value; state.games=0; state.investment=0; state.counts={}; state.hints={}; state.started=false; loadState();
+  $("machine").style.outline="2px solid var(--accent)";
+  setTimeout(()=>$("machine").style.outline="",500);
+  render();
+});
+$("games").addEventListener("input",e=>{state.games=Math.max(0,Number(e.target.value)||0);saveState();render()});
+$("investment").addEventListener("input",e=>{state.investment=Math.max(0,Number(e.target.value)||0);saveState();render()});
+$("start").addEventListener("click",()=>{state.started=!state.started;saveState();$("start").textContent=state.started?"実戦中 ●":"実戦開始";$("start").className=state.started?"btn full big-start":"primary full big-start"});
+$("copy").addEventListener("click",async()=>{updateExport();try{await navigator.clipboard.writeText($("export").value);$("copy").textContent="コピーしました ✓";setTimeout(()=>$("copy").textContent="現在データをコピー",1200)}catch(e){$("export").select();document.execCommand("copy")}});
+$("sourceBtn").addEventListener("click",()=>{const u=profile().source;if(u) location.href=u; else alert("この機種にはDMM解析ページを登録していません。");});
+$("gMinus").addEventListener("click",()=>{tap();addGames(-100)});
+$("gPlus").addEventListener("click",()=>{tap();addGames(100)});
+$("invPlus").addEventListener("click",()=>{tap();addInvestment(5000)});
+$("reset").addEventListener("click",resetSession);
+$("stickyG").addEventListener("click",()=>{tap();addGames(100)});
+$("stickyInv").addEventListener("click",()=>{tap();addInvestment(5000)});
+$("stickyCopy").addEventListener("click",async()=>{$("copy").click()});
+loadState();renderMachine();render();
+</script>
+</body>
+</html>
